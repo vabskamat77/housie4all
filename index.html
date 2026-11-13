@@ -562,7 +562,7 @@
         };
 
         // Firebase Initialization (uses environment config if available, otherwise uses MANUAL_FIREBASE_CONFIG)
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'Housie';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'housie';
         const hasManualConfig = MANUAL_FIREBASE_CONFIG.apiKey && MANUAL_FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
         const firebaseConfig = typeof __firebase_config !== 'undefined'
             ? JSON.parse(__firebase_config)
@@ -626,6 +626,34 @@
         let lastAnnouncedWinnerCount = 0;
         let unsubscribeRoom = null;
         let unsubscribePlayers = null;
+
+        // LocalStorage Persistence Helpers for Disconnects & Refreshes
+        const LOCAL_STORAGE_KEY = 'tambola_player_session_v1';
+
+        function saveSessionState() {
+            if (!roomCode) return;
+            const state = {
+                roomCode,
+                isHost,
+                playerName,
+                tickets,
+                isAutoMarkEnabled,
+                savedAt: Date.now()
+            };
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {
+                console.error("Failed to save session state:", e);
+            }
+        }
+
+        function clearSessionState() {
+            try {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+            } catch (e) {
+                console.error("Failed to clear session state:", e);
+            }
+        }
 
         // UI & Lobby Helpers
         function generateRoomCode() {
@@ -771,6 +799,8 @@
                 }
             }
 
+            saveSessionState();
+
             if (!isOfflinePractice && db) {
                 const btn = document.getElementById('btn-create-room');
                 try {
@@ -799,15 +829,6 @@
                         createdAt: Date.now()
                     });
 
-                    const playerRef = doc(db, 'artifacts', appId, 'public', 'data', `tambola_players_${roomCode}`, user.uid);
-                    await setDoc(playerRef, {
-                        uid: user.uid,
-                        name: `${playerName} (Host)`,
-                        ticketCount: tickets.length,
-                        ticketNames: tickets.map(t => t.name),
-                        joinedAt: Date.now()
-                    });
-
                     subscribeToRoom(roomCode);
                     btn.disabled = false;
                     btn.innerHTML = '<span>🚀 Create Multiplayer Room</span>';
@@ -816,11 +837,10 @@
                     btn.disabled = false;
                     btn.innerHTML = '<span>🚀 Create Multiplayer Room</span>';
                     
-                    // Fallback modal asking if they want to switch to offline practice mode
                     const modal = document.getElementById('custom-modal');
                     document.getElementById('modal-icon').textContent = '⚠️';
-                    document.getElementById('modal-title').textContent = 'Multiplayer Connection Notice';
-                    document.getElementById('modal-message').textContent = `Could not write to Firebase Firestore (${err.message || 'Permission/Network error'}). Would you like to launch in Solo / Local Practice Mode instead?`;
+                    document.getElementById('modal-title').textContent = 'Connection or Permission Notice';
+                    document.getElementById('modal-message').textContent = `Unable to write to the live room database (${err.message || 'Permission denied'}).\n\nWould you like to continue in Solo / Local Practice Mode right now?`;
                     document.getElementById('modal-actions').innerHTML = `
                         <button onclick="closeModal()" class="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold rounded-xl text-sm">Cancel</button>
                         <button onclick="closeModal(); createMultiplayerGame(true);" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm">Play Practice Mode</button>
@@ -833,7 +853,7 @@
             enterGameRoomUI();
         }
 
-        // Join Existing Game Room
+        // Join Existing Game Room (or Reclaim Host if matching host name/id)
         async function joinExistingGame() {
             const codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
             if (codeInput.length !== 6) {
@@ -862,9 +882,15 @@
                 }
 
                 roomCode = codeInput;
-                isHost = false;
                 isOfflinePractice = false;
                 playerName = document.getElementById('join-player-name').value.trim() || 'Player';
+
+                const roomData = snap.data();
+                if (roomData.hostId === user.uid || (roomData.hostName && roomData.hostName.toLowerCase() === playerName.toLowerCase())) {
+                    isHost = true;
+                } else {
+                    isHost = false;
+                }
 
                 const count = parseInt(document.getElementById('join-ticket-count').value, 10) || 1;
                 const nameInputs = Array.from(document.querySelectorAll('#join-ticket-names-container input'));
@@ -873,6 +899,8 @@
                     const tName = (nameInputs[i] && nameInputs[i].value.trim()) || `${playerName}'s Ticket ${i + 1}`;
                     tickets.push(createTicketObject(tName));
                 }
+
+                saveSessionState();
 
                 if (user) {
                     const playerRef = doc(db, 'artifacts', appId, 'public', 'data', `tambola_players_${roomCode}`, user.uid);
@@ -885,7 +913,6 @@
                     });
                 }
 
-                const roomData = snap.data();
                 calledNumbers = roomData.calledNumbers || [];
                 currentNumber = roomData.currentNumber || null;
                 claimsStatus = roomData.claims || claimsStatus;
@@ -898,6 +925,61 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<span>🎯 Join Live Game</span>';
+            }
+        }
+
+        async function attemptAutoReconnect() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (!raw) return;
+                const session = JSON.parse(raw);
+                if (!session || !session.roomCode || !session.tickets || session.tickets.length === 0) return;
+
+                // Check if session is less than 6 hours old
+                if (Date.now() - session.savedAt > 6 * 3600 * 1000) {
+                    clearSessionState();
+                    return;
+                }
+
+                roomCode = session.roomCode;
+                isHost = session.isHost;
+                playerName = session.playerName;
+                tickets = session.tickets;
+                isAutoMarkEnabled = session.isAutoMarkEnabled || false;
+
+                if (db) {
+                    const user = await ensureAuth();
+                    const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'tambola_rooms', roomCode);
+                    const snap = await getDoc(roomRef);
+                    if (snap.exists()) {
+                        const roomData = snap.data();
+                        calledNumbers = roomData.calledNumbers || [];
+                        currentNumber = roomData.currentNumber || null;
+                        claimsStatus = roomData.claims || claimsStatus;
+
+                        if (user) {
+                            const playerRef = doc(db, 'artifacts', appId, 'public', 'data', `tambola_players_${roomCode}`, user.uid);
+                            await setDoc(playerRef, {
+                                uid: user.uid,
+                                name: playerName,
+                                ticketCount: tickets.length,
+                                ticketNames: tickets.map(t => t.name),
+                                joinedAt: Date.now()
+                            }, { merge: true });
+                        }
+                    } else {
+                        // Room no longer exists online, fallback to offline/practice mode with saved tickets
+                        isOfflinePractice = true;
+                    }
+                } else {
+                    isOfflinePractice = true;
+                }
+
+                subscribeToRoom(roomCode);
+                enterGameRoomUI();
+            } catch (e) {
+                console.error("Auto-reconnect error:", e);
+                clearSessionState();
             }
         }
 
@@ -1251,12 +1333,14 @@
             const tkt = tickets[ticketIdx];
             if (!tkt || tkt.grid[r][c] === 0) return;
             tkt.daubed[r][c] = !tkt.daubed[r][c];
+            saveSessionState();
             renderPlayerTickets();
         }
 
         function renameTicket(ticketIdx, newName) {
             if (tickets[ticketIdx]) {
                 tickets[ticketIdx].name = newName.trim() || `Ticket ${ticketIdx + 1}`;
+                saveSessionState();
                 syncPlayerMetadata();
             }
         }
@@ -1269,6 +1353,7 @@
             const newTkt = createTicketObject(`${playerName}'s Ticket ${tickets.length + 1}`);
             tickets.push(newTkt);
             if (isAutoMarkEnabled) applyAutoMarkToAllTickets();
+            saveSessionState();
             updateAllRoomUI();
             syncPlayerMetadata();
         }
@@ -1281,6 +1366,7 @@
             tickets.forEach(t => {
                 t.daubed = Array.from({ length: 3 }, () => Array(9).fill(false));
             });
+            saveSessionState();
             renderPlayerTickets();
         }
 
@@ -1326,6 +1412,13 @@
                     }
                 }
 
+                // Check eligibility for each prize on this specific ticket
+                const eligibleEarly5 = !claimsStatus["Early 5"] && verifyPatternOnTicket(tkt, "Early 5");
+                const eligibleTop = !claimsStatus["Top Line"] && verifyPatternOnTicket(tkt, "Top Line");
+                const eligibleMid = !claimsStatus["Middle Line"] && verifyPatternOnTicket(tkt, "Middle Line");
+                const eligibleBot = !claimsStatus["Bottom Line"] && verifyPatternOnTicket(tkt, "Bottom Line");
+                const eligibleFull = !claimsStatus["Full House"] && verifyPatternOnTicket(tkt, "Full House");
+
                 const rowsHtml = tkt.grid.map((row, r) => `
                     <div class="grid grid-cols-9 gap-1 sm:gap-1.5">
                         ${row.map((val, c) => {
@@ -1346,6 +1439,25 @@
                     </div>
                 `).join('');
 
+                // Quick inline claim buttons if eligible
+                let claimBadgesHtml = '';
+                if (eligibleEarly5 || eligibleTop || eligibleMid || eligibleBot || eligibleFull) {
+                    claimBadgesHtml = `
+                        <div class="bg-amber-500/10 border border-amber-500/40 p-2.5 rounded-xl space-y-2 animate-pulse">
+                            <div class="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
+                                <span>🎉</span> <span>Ticket #${tIdx + 1} is eligible for claim(s)!</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5">
+                                ${eligibleEarly5 ? `<button onclick="claimPrizeForTicket(${tIdx}, 'Early 5')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-xs shadow">Claim Early 5</button>` : ''}
+                                ${eligibleTop ? `<button onclick="claimPrizeForTicket(${tIdx}, 'Top Line')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-xs shadow">Claim Top Line</button>` : ''}
+                                ${eligibleMid ? `<button onclick="claimPrizeForTicket(${tIdx}, 'Middle Line')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-xs shadow">Claim Middle Line</button>` : ''}
+                                ${eligibleBot ? `<button onclick="claimPrizeForTicket(${tIdx}, 'Bottom Line')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded text-xs shadow">Claim Bottom Line</button>` : ''}
+                                ${eligibleFull ? `<button onclick="claimPrizeForTicket(${tIdx}, 'Full House')" class="px-2.5 py-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded text-xs shadow">Claim Full House 🏆</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3">
                         <div class="flex justify-between items-center gap-2">
@@ -1362,6 +1474,7 @@
                         <div class="bg-slate-950/70 p-2.5 sm:p-3 rounded-xl border border-slate-700/80 space-y-1.5">
                             ${rowsHtml}
                         </div>
+                        ${claimBadgesHtml}
                     </div>
                 `;
             }).join('');
@@ -1407,18 +1520,24 @@
         }
 
         async function claimPrize(claimName) {
+            const idx = parseInt(document.getElementById('claim-ticket-selector').value, 10) || 0;
+            await executeClaimForTicket(idx, claimName);
+        }
+
+        async function claimPrizeForTicket(ticketIdx, claimName) {
+            await executeClaimForTicket(ticketIdx, claimName);
+        }
+
+        async function executeClaimForTicket(ticketIdx, claimName) {
             if (claimsStatus[claimName]) {
                 showModal('ℹ️', 'Already Claimed', `${claimName} was already won by ${claimsStatus[claimName].winnerName}.`);
                 return;
             }
-            if (tickets.length === 0) {
-                showModal('⚠️', 'No Ticket Selected', 'Generate or join with at least one ticket to claim a prize.');
+            const selectedTicket = tickets[ticketIdx];
+            if (!selectedTicket) {
+                showModal('⚠️', 'No Ticket Found', 'Ticket selection is invalid.');
                 return;
             }
-
-            const idx = parseInt(document.getElementById('claim-ticket-selector').value, 10) || 0;
-            const selectedTicket = tickets[idx];
-            if (!selectedTicket) return;
 
             const isValid = verifyPatternOnTicket(selectedTicket, claimName);
             if (!isValid) {
@@ -1587,6 +1706,7 @@
         function leaveRoomToLobby() {
             closeModal();
             stopAutoPlay();
+            clearSessionState();
             if (unsubscribeRoom) unsubscribeRoom();
             if (unsubscribePlayers) unsubscribePlayers();
             roomCode = null;
@@ -1649,6 +1769,7 @@
             addAnotherTicketInGame,
             clearAllDaubs,
             claimPrize,
+            claimPrizeForTicket,
             copyInviteLink,
             copyShareMessage,
             confirmResetRoomNumbers,
@@ -1666,6 +1787,9 @@
             if (roomParam) {
                 document.getElementById('join-room-code').value = roomParam.trim().toUpperCase().slice(0, 6);
             }
+
+            // Attempt session auto-reconnect on refresh/disconnect
+            attemptAutoReconnect();
         });
     </script>
 </body>
