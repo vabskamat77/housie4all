@@ -65,13 +65,16 @@
                 <button onclick="switchTab('players')" id="tab-players" class="hidden px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white">
                     Players & Tickets
                 </button>
-                <button onclick="switchTab('claims')" id="tab-claims" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white">
+                <button onclick="switchTab('claims')" id="tab-claims" class="hidden px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white">
                     Prizes & Winners
                 </button>
             </div>
 
             <!-- Global Controls -->
             <div class="flex items-center space-x-2">
+                <button onclick="openOwnerPortalModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs sm:text-sm transition flex items-center gap-1 shadow">
+                    <span>👑 Owner Portal</span>
+                </button>
                 <button onclick="toggleAudio()" id="audio-btn" class="p-2 sm:p-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-slate-200 transition text-sm flex items-center space-x-1" title="Toggle Voice Callout">
                     <span id="audio-icon">🔇</span>
                     <span class="hidden sm:inline text-xs font-medium">Voice</span>
@@ -88,46 +91,54 @@
 
         <!-- ================= 1. LANDING / LOBBY SCREEN ================= -->
         <div id="section-lobby" class="max-w-4xl mx-auto space-y-6">
-            <div class="text-center space-y-2 py-4">
+            <div class="text-center space-y-2 py-2">
                 <span class="inline-block px-3 py-1 rounded-full bg-emerald-900/50 border border-emerald-500/30 text-emerald-300 text-xs font-semibold tracking-wide uppercase">
                     Real-Time Multiplayer Housie
                 </span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                     Play Tambola Online with Friends
                 </h2>
-                <p class="text-sm sm:text-base text-slate-400 max-w-xl mx-auto">
+                <p class="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
                     Host a live room with an automated voice caller board, or join an existing game using a 6-character code or invite link.
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Host a New Game Card -->
-                <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-6">
-                    <div class="space-y-4">
-                        <div class="w-12 h-12 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-2xl">
-                            🎙️
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-white">Host a New Game</h3>
-                            <p class="text-xs text-slate-400 mt-1">Create a live room, share the invite link, call numbers, and optionally play with your own tickets.</p>
+                <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-xl flex-shrink-0">
+                                🎙️
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white leading-tight">Host a New Game</h3>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Create a live room and share invite link.</p>
+                            </div>
                         </div>
 
-                        <div class="space-y-3 pt-2">
+                        <!-- Free token promotion banner -->
+                        <div class="bg-emerald-950/60 border border-emerald-500/40 p-2.5 rounded-xl text-xs space-y-0.5">
+                            <div class="font-bold text-emerald-300 text-[11px]">🎉 Free Hosting Promotion</div>
+                            <p class="text-slate-300 text-[11px]">Play for free up to 10 tickets - Token: <code class="text-amber-300 font-mono font-bold whitespace-nowrap select-all">HOST-2026-FP10</code></p>
+                        </div>
+
+                        <div class="space-y-2.5 pt-1">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-300 mb-1">Host Name</label>
-                                <input type="text" id="host-name-input" placeholder="e.g., Alex (Host)" value="Host" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500">
+                                <label class="block text-[11px] font-semibold text-amber-300 mb-1">Host Token (Required)</label>
+                                <input type="text" id="host-token-input" placeholder="e.g., HOST-2026-FP10" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold tracking-wider text-amber-400 focus:outline-none focus:border-emerald-500 uppercase">
                             </div>
 
-                            <div class="bg-slate-900/70 p-3.5 rounded-xl border border-slate-700/70 space-y-3">
+                            <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-700/70 space-y-2">
                                 <label class="flex items-center justify-between cursor-pointer">
                                     <span class="text-xs font-semibold text-slate-200">Also play with tickets as Host?</span>
                                     <input type="checkbox" id="host-play-checkbox" onchange="toggleHostTicketConfig()" class="w-4 h-4 accent-emerald-500 rounded">
                                 </label>
 
-                                <div id="host-ticket-config" class="hidden space-y-3 pt-2 border-t border-slate-800">
+                                <div id="host-ticket-config" class="hidden space-y-2 pt-2 border-t border-slate-800">
                                     <div>
-                                        <label class="block text-xs text-slate-400 mb-1">Number of Tickets</label>
-                                        <select id="host-ticket-count" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white">
+                                        <label class="block text-[11px] text-slate-400 mb-1">Number of Tickets</label>
+                                        <select id="host-ticket-count" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white">
                                             <option value="1" selected>1 Ticket</option>
                                             <option value="2">2 Tickets</option>
                                             <option value="3">3 Tickets</option>
@@ -140,42 +151,41 @@
                         </div>
                     </div>
 
-                    <div class="space-y-2.5">
-                        <button onclick="createMultiplayerGame(false)" id="btn-create-room" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-98 flex items-center justify-center gap-2">
+                    <div class="pt-1">
+                        <button onclick="createMultiplayerGame(false)" id="btn-create-room" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-98 flex items-center justify-center gap-2 text-sm">
                             <span>🚀 Create Multiplayer Room</span>
-                        </button>
-                        <button onclick="createMultiplayerGame(true)" class="w-full py-2.5 bg-slate-700/80 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">
-                            🎮 Solo / Local Practice Mode (Offline)
                         </button>
                     </div>
                 </div>
 
                 <!-- Join an Existing Game Card -->
-                <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-6">
-                    <div class="space-y-4">
-                        <div class="w-12 h-12 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-2xl">
-                            🎟️
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold text-white">Join an Existing Game</h3>
-                            <p class="text-xs text-slate-400 mt-1">Enter the 6-character Game Code shared by your host and start playing.</p>
+                <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5 shadow-xl flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-xl flex-shrink-0">
+                                🎟️
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-white leading-tight">Join an Existing Game</h3>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Enter 6-char Game Code to start playing.</p>
+                            </div>
                         </div>
 
-                        <div class="space-y-3 pt-2">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="space-y-2.5 pt-1">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-300 mb-1">6-Char Game Code</label>
-                                    <input type="text" id="join-room-code" maxlength="6" placeholder="e.g., AB12CD" oninput="this.value = this.value.toUpperCase()" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold tracking-widest uppercase text-amber-400 focus:outline-none focus:border-indigo-500">
+                                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">6-Char Game Code</label>
+                                    <input type="text" id="join-room-code" maxlength="6" placeholder="e.g., AB12CD" oninput="this.value = this.value.toUpperCase()" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold tracking-widest uppercase text-amber-400 focus:outline-none focus:border-indigo-500">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Your Player Name</label>
-                                    <input type="text" id="join-player-name" placeholder="e.g., Priya" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+                                    <label class="block text-[11px] font-semibold text-slate-300 mb-1">Your Player Name</label>
+                                    <input type="text" id="join-player-name" placeholder="e.g., Priya" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
                                 </div>
                             </div>
 
                             <div>
-                                <label class="block text-xs font-semibold text-slate-300 mb-1">Number of Tickets</label>
-                                <select id="join-ticket-count" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+                                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Number of Tickets</label>
+                                <select id="join-ticket-count" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500">
                                     <option value="1" selected>1 Ticket</option>
                                     <option value="2">2 Tickets</option>
                                     <option value="3">3 Tickets</option>
@@ -186,9 +196,11 @@
                         </div>
                     </div>
 
-                    <button onclick="joinExistingGame()" id="btn-join-room" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-98 flex items-center justify-center gap-2">
-                        <span>🎯 Join Live Game</span>
-                    </button>
+                    <div class="pt-1">
+                        <button onclick="joinExistingGame()" id="btn-join-room" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-98 flex items-center justify-center gap-2 text-sm">
+                            <span>🎯 Join Live Game</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -652,6 +664,92 @@
         </div>
     </div>
 
+    <!-- Owner Portal Login / Token Management Modal -->
+    <div id="owner-portal-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <span>👑 Owner Portal & Token Manager</span>
+                </h3>
+                <button onclick="closeOwnerPortalModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">✕</button>
+            </div>
+
+            <!-- Login View -->
+            <div id="owner-login-container" class="space-y-4">
+                <p class="text-xs text-slate-400">Enter master passcode to manage hosting tokens.</p>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Master Passcode</label>
+                    <input type="password" id="owner-pass-input" placeholder="Enter passcode" onkeydown="if(event.key==='Enter') verifyOwnerLogin()" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500">
+                </div>
+                <button onclick="verifyOwnerLogin()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm transition shadow">
+                    🔐 Login to Owner Portal
+                </button>
+            </div>
+
+            <!-- Dashboard View -->
+            <div id="owner-dashboard-container" class="hidden space-y-4">
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+                    <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Generate Host Token</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div class="sm:col-span-2">
+                            <label class="block text-[11px] text-slate-400 mb-1">Token Code (Auto or Custom)</label>
+                            <div class="flex gap-1.5">
+                                <input type="text" id="new-token-string" placeholder="HOST-XXXX-XXXX" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-amber-300 uppercase">
+                                <button onclick="fillRandomHostToken()" class="px-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-semibold" title="Generate Random">🎲</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Max Tickets</label>
+                            <select id="new-token-limit" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white">
+                                <option value="10">10 Tickets</option>
+                                <option value="25">25 Tickets</option>
+                                <option value="50" selected>50 Tickets</option>
+                                <option value="100">100 Tickets</option>
+                                <option value="9999">Unlimited</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                            <input type="checkbox" id="new-token-singleuse" class="w-4 h-4 accent-emerald-500 rounded">
+                            <span>Single-Use Token (Revoke after 1 use)</span>
+                        </label>
+                        <button onclick="generateNewHostingToken()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition shadow">
+                            ➕ Create Token
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-slate-300">Generated Hosting Tokens</h4>
+                    <div id="tokens-list-container" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Change Passcode Section -->
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+                    <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Change Owner Passcode</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">New Passcode</label>
+                            <input type="password" id="new-passcode-input" placeholder="New passcode" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white">
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="changeOwnerPasscode()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs transition shadow">
+                                🔑 Update Passcode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="logoutOwnerPortal()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-xl text-xs transition">
+                    🔒 Logout Owner Portal
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase & Multiplayer Game Script -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -750,6 +848,149 @@
         let unsubscribeRoom = null;
         let unsubscribePlayers = null;
         let roomRoster = [];
+
+        // Owner Passcode & Tokens DB State
+        let ownerPasscode = localStorage.getItem('tambola_owner_passcode_v1') || 'ADMIN1234';
+        let hostingTokensDB = JSON.parse(localStorage.getItem('tambola_hosting_tokens_v2') || JSON.stringify([
+            { token: "HOST-2026-FP10", maxTickets: 10, singleUse: false, usedCount: 0, active: true, createdAt: Date.now() },
+            { token: "HOST-2026-LIVE", maxTickets: 50, singleUse: false, usedCount: 0, active: true, createdAt: Date.now() },
+            { token: "HOST-VIP-001", maxTickets: 100, singleUse: true, usedCount: 0, active: true, createdAt: Date.now() }
+        ]));
+
+        function saveHostingTokensDB() {
+            try {
+                localStorage.setItem('tambola_hosting_tokens_v2', JSON.stringify(hostingTokensDB));
+            } catch (e) {}
+        }
+
+        function openOwnerPortalModal() {
+            document.getElementById('owner-portal-modal').classList.remove('hidden');
+            document.getElementById('owner-login-container').classList.remove('hidden');
+            document.getElementById('owner-dashboard-container').classList.add('hidden');
+            document.getElementById('owner-pass-input').value = '';
+        }
+
+        function closeOwnerPortalModal() {
+            document.getElementById('owner-portal-modal').classList.add('hidden');
+        }
+
+        function verifyOwnerLogin() {
+            const pass = document.getElementById('owner-pass-input').value;
+            if (pass === ownerPasscode) {
+                document.getElementById('owner-login-container').classList.add('hidden');
+                document.getElementById('owner-dashboard-container').classList.remove('hidden');
+                renderTokensList();
+            } else {
+                showModal('❌', 'Invalid Passcode', 'Incorrect owner passcode.');
+            }
+        }
+
+        function changeOwnerPasscode() {
+            const newPass = document.getElementById('new-passcode-input').value.trim();
+            if (!newPass || newPass.length < 4) {
+                showModal('⚠️', 'Invalid Passcode', 'Passcode must be at least 4 characters long.');
+                return;
+            }
+            ownerPasscode = newPass;
+            localStorage.setItem('tambola_owner_passcode_v1', ownerPasscode);
+            document.getElementById('new-passcode-input').value = '';
+            showModal('🔑', 'Passcode Updated', 'Owner master passcode has been successfully changed!');
+        }
+
+        function logoutOwnerPortal() {
+            document.getElementById('owner-login-container').classList.remove('hidden');
+            document.getElementById('owner-dashboard-container').classList.add('hidden');
+        }
+
+        function fillRandomHostToken() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let part1 = '', part2 = '';
+            for (let i = 0; i < 4; i++) part1 += chars.charAt(Math.floor(Math.random() * chars.length));
+            for (let i = 0; i < 4; i++) part2 += chars.charAt(Math.floor(Math.random() * chars.length));
+            document.getElementById('new-token-string').value = `HOST-${part1}-${part2}`;
+        }
+
+        function generateNewHostingToken() {
+            const tokenStr = document.getElementById('new-token-string').value.trim().toUpperCase() || (() => {
+                fillRandomHostToken();
+                return document.getElementById('new-token-string').value.trim().toUpperCase();
+            })();
+            const maxTickets = parseInt(document.getElementById('new-token-limit').value, 10) || 50;
+            const singleUse = document.getElementById('new-token-singleuse').checked;
+
+            if (hostingTokensDB.some(t => t.token === tokenStr)) {
+                showModal('⚠️', 'Token Exists', `Token "${tokenStr}" already exists.`);
+                return;
+            }
+
+            hostingTokensDB.push({
+                token: tokenStr,
+                maxTickets: maxTickets,
+                singleUse: singleUse,
+                usedCount: 0,
+                active: true,
+                createdAt: Date.now()
+            });
+            saveHostingTokensDB();
+            document.getElementById('new-token-string').value = '';
+            renderTokensList();
+            showModal('✅', 'Token Created', `Hosting token "${tokenStr}" generated with max limit ${maxTickets === 9999 ? 'Unlimited' : maxTickets} tickets!`);
+        }
+
+        function toggleTokenStatus(tokenStr) {
+            const item = hostingTokensDB.find(t => t.token === tokenStr);
+            if (item) {
+                item.active = !item.active;
+                saveHostingTokensDB();
+                renderTokensList();
+            }
+        }
+
+        function deleteToken(tokenStr) {
+            hostingTokensDB = hostingTokensDB.filter(t => t.token !== tokenStr);
+            saveHostingTokensDB();
+            renderTokensList();
+        }
+
+        function copyTokenString(tokenStr) {
+            navigator.clipboard.writeText(tokenStr).then(() => {
+                showModal('📋', 'Token Copied', `Token "${tokenStr}" copied to clipboard.`);
+            }).catch(() => {
+                showModal('📋', 'Token Copied', `Token: ${tokenStr}`);
+            });
+        }
+
+        function renderTokensList() {
+            const container = document.getElementById('tokens-list-container');
+            if (!container) return;
+
+            if (hostingTokensDB.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 italic">No hosting tokens generated yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = hostingTokensDB.map(t => `
+                <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-amber-300 font-mono tracking-wider">${escapeHtml(t.token)}</span>
+                            <button onclick="copyTokenString('${t.token}')" class="text-slate-400 hover:text-white" title="Copy Token">📋</button>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">
+                            Limit: <strong class="text-white">${t.maxTickets === 9999 ? 'Unlimited' : t.maxTickets}</strong> | Type: <span class="text-indigo-300">${t.singleUse ? 'Single-Use' : 'Multi-Use'}</span> | Status: <span class="${t.active ? 'text-emerald-400' : 'text-rose-400'}">${t.active ? 'Active' : 'Disabled'}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleTokenStatus('${t.token}')" class="px-2.5 py-1 rounded font-semibold ${t.active ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/30' : 'bg-rose-900/60 text-rose-300 border border-rose-500/30'}">
+                            ${t.active ? 'Active' : 'Disabled'}
+                        </button>
+                        <button onclick="deleteToken('${t.token}')" class="px-2 py-1 bg-slate-800 hover:bg-rose-900 text-slate-300 hover:text-white rounded border border-slate-700 transition">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         function getAllParticipantsList(roster) {
             const activeRoster = (roster || []).filter(p => p && p.left !== true);
@@ -1011,13 +1252,33 @@
 
         async function createMultiplayerGame(offlineMode) {
             isOfflinePractice = offlineMode || !db;
+
+            let tokenConfig = null;
+            if (!isOfflinePractice) {
+                const tokenInput = document.getElementById('host-token-input').value.trim().toUpperCase();
+                if (!tokenInput) {
+                    showModal('⚠️', 'Host Token Required', 'Please enter a valid Host Token generated from the Owner Portal.');
+                    return;
+                }
+
+                tokenConfig = hostingTokensDB.find(t => t.token === tokenInput);
+                if (!tokenConfig || !tokenConfig.active) {
+                    showModal('❌', 'Invalid or Inactive Token', `The host token "${tokenInput}" is invalid, disabled, or does not exist.`);
+                    return;
+                }
+                if (tokenConfig.singleUse && tokenConfig.usedCount > 0) {
+                    showModal('❌', 'Token Already Used', `This single-use hosting token has already been redeemed.`);
+                    return;
+                }
+            }
+
             isHost = true;
-            playerName = document.getElementById('host-name-input').value.trim() || 'Host';
+            playerName = "Host";
             roomCode = generateRoomCode();
             roomRoster = [];
 
             tickets = [];
-            const hostPlays = document.getElementById('host-play-checkbox').checked || isOfflinePractice;
+            const hostPlays = document.getElementById('host-play-checkbox').checked;
             if (hostPlays) {
                 const count = parseInt(document.getElementById('host-ticket-count').value, 10) || 1;
                 for (let i = 0; i < count; i++) {
@@ -1041,6 +1302,8 @@
                         roomCode: roomCode,
                         hostId: hostUid,
                         hostName: playerName,
+                        hostToken: tokenConfig ? tokenConfig.token : 'OFFLINE',
+                        maxTicketLimit: tokenConfig ? tokenConfig.maxTickets : 9999,
                         calledNumbers: [],
                         currentNumber: null,
                         restrictOnePrizePerTicket: restrictOnePrizePerTicket,
@@ -1054,6 +1317,12 @@
                         },
                         createdAt: Date.now()
                     });
+
+                    if (tokenConfig && tokenConfig.singleUse) {
+                        tokenConfig.usedCount++;
+                        tokenConfig.active = false;
+                        saveHostingTokensDB();
+                    }
 
                     subscribeToRoom(roomCode);
                 } catch (err) {
@@ -1107,6 +1376,27 @@
                     return;
                 }
 
+                // Check Room Ticket Capacity Limit
+                const requestedTicketCount = parseInt(document.getElementById('join-ticket-count').value, 10) || 1;
+                const maxLimit = roomData.maxTicketLimit !== undefined ? roomData.maxTicketLimit : 9999;
+
+                const playersCol = collection(db, 'artifacts', appId, 'public', 'data', `tambola_players_${codeInput}`);
+                const playersSnap = await getDocs(playersCol);
+                let currentTotalTickets = 0;
+                playersSnap.forEach(d => {
+                    const pData = d.data();
+                    if (pData && pData.left !== true && (!user || pData.uid !== user.uid)) {
+                        currentTotalTickets += (pData.ticketCount || 1);
+                    }
+                });
+
+                if (currentTotalTickets + requestedTicketCount > maxLimit) {
+                    showModal('🛑', 'Ticket Capacity Reached', `This room has reached its maximum ticket limit of ${maxLimit} tickets (${currentTotalTickets} already active). You cannot join with ${requestedTicketCount} tickets.`);
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>🎯 Join Live Game</span>';
+                    return;
+                }
+
                 roomCode = codeInput;
                 isOfflinePractice = false;
                 playerName = document.getElementById('join-player-name').value.trim() || 'Player';
@@ -1120,9 +1410,8 @@
                     isHost = false;
                 }
 
-                const count = parseInt(document.getElementById('join-ticket-count').value, 10) || 1;
                 tickets = [];
-                for (let i = 0; i < count; i++) {
+                for (let i = 0; i < requestedTicketCount; i++) {
                     tickets.push(createTicketObject(`Ticket ${i + 1}`));
                 }
 
@@ -1205,6 +1494,7 @@
                         claimsStatus = roomData.claims || claimsStatus;
                         if (roomData.restrictOnePrizePerTicket !== undefined) {
                             restrictOnePrizePerTicket = roomData.restrictOnePrizePerTicket;
+                            updateHostRuleUI();
                         }
                         if (roomData.lockRoomNewPlayers !== undefined) {
                             lockRoomNewPlayers = roomData.lockRoomNewPlayers;
@@ -1330,7 +1620,6 @@
             if (unsubscribeRoom) unsubscribeRoom();
             if (unsubscribePlayers) unsubscribePlayers();
 
-            // Immediate initial fetch so mobile browsers don't wait on WebSocket handshake
             fetchRoomAndPlayersSnapshot(code);
 
             const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'tambola_rooms', code);
@@ -2388,7 +2677,6 @@
             const val = ticket.grid[rIdx][cIdx];
             if (val === 0) return;
 
-            // Check if the number has been called on the host board before allowing manual daubing
             if (!calledNumbers.includes(val)) {
                 showModal('⚠️', 'Number Not Called', `Number ${val} has not been called yet by the host!`);
                 return;
@@ -2647,6 +2935,17 @@
                 .replace(/'/g, '&#039;');
         }
 
+        window.openOwnerPortalModal = openOwnerPortalModal;
+        window.closeOwnerPortalModal = closeOwnerPortalModal;
+        window.verifyOwnerLogin = verifyOwnerLogin;
+        window.changeOwnerPasscode = changeOwnerPasscode;
+        window.logoutOwnerPortal = logoutOwnerPortal;
+        window.fillRandomHostToken = fillRandomHostToken;
+        window.generateNewHostingToken = generateNewHostingToken;
+        window.toggleTokenStatus = toggleTokenStatus;
+        window.deleteToken = deleteToken;
+        window.copyTokenString = copyTokenString;
+
         window.createMultiplayerGame = createMultiplayerGame;
         window.joinExistingGame = joinExistingGame;
         window.switchTab = switchTab;
@@ -2677,7 +2976,6 @@
         window.closeModal = closeModal;
         window.forceRefreshRoomData = forceRefreshRoomData;
 
-        // Re-sync Firestore listeners & data when mobile browser wakes up or switches back from another app (e.g., WhatsApp)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible' && roomCode && !isOfflinePractice && db) {
                 forceRefreshRoomData(false);
